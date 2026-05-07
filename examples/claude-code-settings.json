@@ -1,0 +1,9 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:4000",
+    "ANTHROPIC_API_KEY": "not-a-real-anthropic-key",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-pro"
+  }
+}

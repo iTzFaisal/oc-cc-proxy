@@ -1,0 +1,3 @@
+[console_scripts]
+oc-cc-proxy = oc_proxy.cli:main
+oc-cc-proxy-validate = oc_proxy.validation:main
