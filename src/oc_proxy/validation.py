@@ -16,13 +16,13 @@ def raise_for_status_with_body(response: httpx.Response, check_name: str) -> Non
 
 
 def messages_payload(*, model: str, stream: bool = False, tools: bool = False) -> dict[str, Any]:
-    prompt = "Use the get_status tool for target proxy."
+    prompt = "Use the get_status tool for target proxy. Do not answer in text."
     if not tools:
         prompt = "Reply with exactly: ok"
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
     payload: dict[str, Any] = {
         "model": model,
-        "max_tokens": 64,
+        "max_tokens": 256 if tools else 64,
         "stream": stream,
         "messages": messages,
     }

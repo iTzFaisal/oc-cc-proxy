@@ -15,6 +15,8 @@ def test_tool_payload_uses_anthropic_input_schema() -> None:
 
     tool = payload["tools"][0]
 
+    assert payload["max_tokens"] == 256
+    assert "tool_choice" not in payload
     assert tool["name"] == "get_status"
     assert tool["input_schema"]["type"] == "object"
 
