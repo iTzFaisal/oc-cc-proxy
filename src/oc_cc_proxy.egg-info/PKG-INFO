@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: oc-cc-proxy
-Version: 0.1.1
+Version: 0.1.2
 Summary: Local LiteLLM proxy for routing Claude Code to OpenCode Go.
 Project-URL: Homepage, https://github.com/iTzFaisal/oc-cc-proxy
 Project-URL: Repository, https://github.com/iTzFaisal/oc-cc-proxy
