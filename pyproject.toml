@@ -1,6 +1,6 @@
 [project]
 name = "oc-cc-proxy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local LiteLLM proxy for routing Claude Code to OpenCode Go."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,10 +17,7 @@ oc-cc-proxy-validate = "oc_proxy.validation:main"
 
 
 [dependency-groups]
-dev = [
-    "pytest>=9.0.3",
-    "ruff>=0.15.12",
-]
+dev = ["pytest>=9.0.3", "ruff>=0.15.12"]
 
 [build-system]
 requires = ["setuptools>=69"]
