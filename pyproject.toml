@@ -11,6 +11,10 @@ dependencies = [
     "pyyaml>=6.0.3",
 ]
 
+[project.urls]
+Homepage = "https://github.com/iTzFaisal/oc-cc-proxy"
+Repository = "https://github.com/iTzFaisal/oc-cc-proxy"
+
 [project.scripts]
 oc-cc-proxy = "oc_proxy.cli:main"
 oc-cc-proxy-validate = "oc_proxy.validation:main"
