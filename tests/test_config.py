@@ -22,7 +22,7 @@ from oc_proxy.config import (
 def test_load_settings_requires_api_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("OPENCODE_GO_API_KEY", raising=False)
 
-    with pytest.raises(ConfigurationError, match="Missing OPENCODE_GO_API_KEY"):
+    with pytest.raises(ConfigurationError, match="Missing OpenCode Go API key"):
         load_settings(env_file=str(tmp_path / "missing.env"))
 
 
@@ -36,6 +36,22 @@ def test_load_settings_uses_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.api_key == "sk-test"
     assert settings.host == DEFAULT_HOST
     assert settings.port == DEFAULT_PORT
+
+
+def test_load_settings_uses_explicit_api_key_without_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("OPENCODE_GO_API_KEY", raising=False)
+
+    settings = load_settings(api_key="sk-cli")
+
+    assert settings.api_key == "sk-cli"
+
+
+def test_load_settings_prefers_explicit_api_key_over_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-env")
+
+    settings = load_settings(api_key="sk-cli")
+
+    assert settings.api_key == "sk-cli"
 
 
 def test_litellm_config_uses_wildcard_openai_route() -> None:

@@ -28,16 +28,16 @@ class ProxySettings:
     debug: bool = False
 
 
-def load_settings(*, env_file: str | None = None, debug: bool = False) -> ProxySettings:
+def load_settings(*, env_file: str | None = None, api_key: str | None = None, debug: bool = False) -> ProxySettings:
     if env_file:
         load_dotenv(env_file)
     else:
         load_dotenv()
 
-    api_key = os.getenv(OPENCODE_GO_API_KEY_ENV)
-    if not api_key:
+    resolved_api_key = api_key or os.getenv(OPENCODE_GO_API_KEY_ENV)
+    if not resolved_api_key:
         raise ConfigurationError(
-            f"Missing {OPENCODE_GO_API_KEY_ENV}. Set it in the environment or a .env file before starting oc-cc-proxy."
+            f"Missing OpenCode Go API key. Pass --api-key or set {OPENCODE_GO_API_KEY_ENV} in the environment or a .env file before starting oc-cc-proxy."
         )
 
     host = os.getenv("OC_PROXY_HOST", DEFAULT_HOST)
@@ -47,7 +47,7 @@ def load_settings(*, env_file: str | None = None, debug: bool = False) -> ProxyS
     except ValueError as exc:
         raise ConfigurationError(f"OC_PROXY_PORT must be an integer, got {port_value!r}.") from exc
 
-    return ProxySettings(api_key=api_key, host=host, port=port, debug=debug)
+    return ProxySettings(api_key=resolved_api_key, host=host, port=port, debug=debug)
 
 
 def build_litellm_config(settings: ProxySettings) -> dict[str, Any]:

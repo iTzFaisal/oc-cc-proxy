@@ -14,6 +14,7 @@ from .config import ConfigurationError, load_settings, summarize_payload_shape, 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run a local LiteLLM proxy for Claude Code and OpenCode Go.")
     parser.add_argument("--env-file", help="Path to a .env file containing OPENCODE_GO_API_KEY.")
+    parser.add_argument("--api-key", help="OpenCode Go API key for this run.")
     parser.add_argument("--host", help="Override OC_PROXY_HOST for this run.")
     parser.add_argument("--port", type=int, help="Override OC_PROXY_PORT for this run.")
     parser.add_argument("--config", help="Write LiteLLM config to this path instead of a temporary file.")
@@ -25,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        settings = load_settings(env_file=args.env_file, debug=args.debug)
+        settings = load_settings(env_file=args.env_file, api_key=args.api_key, debug=args.debug)
     except ConfigurationError as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 2

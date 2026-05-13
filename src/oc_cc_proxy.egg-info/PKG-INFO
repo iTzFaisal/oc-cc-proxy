@@ -20,11 +20,10 @@ The proxy listens on `http://127.0.0.1:4000` by default and routes all Claude Co
 ## Quickstart (uvx)
 
 ```bash
-export OPENCODE_GO_API_KEY="your-key-here"
-uvx oc-cc-proxy
+uvx oc-cc-proxy --api-key your-key-here
 ```
 
-The proxy fails before accepting requests if `OPENCODE_GO_API_KEY` is missing.
+You can still use `OPENCODE_GO_API_KEY` from the environment or a `.env` file instead. The proxy fails before accepting requests if neither `--api-key` nor `OPENCODE_GO_API_KEY` is provided.
 
 ## Claude Code Settings
 
@@ -35,18 +34,19 @@ Add equivalent environment values to your Claude Code user-scope `settings.json`
   "env": {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:4000",
     "ANTHROPIC_API_KEY": "dummy-key-for-claude-code",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-pro",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "qwen3.6-plus",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-pro"
   }
 }
 ```
 
-`ANTHROPIC_API_KEY` only needs to be non-empty for the local proxy path. OpenCode Go authentication uses `OPENCODE_GO_API_KEY` on the proxy process.
+`ANTHROPIC_API_KEY` only needs to be non-empty for the local proxy path. OpenCode Go authentication uses the `--api-key` flag or `OPENCODE_GO_API_KEY` on the proxy process.
 
 ## Configuration
 
-- `OPENCODE_GO_API_KEY`: required OpenCode Go API key.
+- `--api-key`: optional CLI override for the OpenCode Go API key. Recommended for `uvx` usage.
+- `OPENCODE_GO_API_KEY`: required if `--api-key` is not provided.
 - `OC_PROXY_HOST`: optional host override, defaults to `127.0.0.1`.
 - `OC_PROXY_PORT`: optional port override, defaults to `4000`.
 
