@@ -62,7 +62,10 @@ def test_litellm_config_uses_wildcard_openai_route() -> None:
     assert route["litellm_params"]["model"] == "openai/*"
     assert route["litellm_params"]["api_base"] == OPENCODE_GO_API_BASE
     assert route["litellm_params"]["api_key"] == "sk-test"
-    assert config["litellm_settings"]["callbacks"] == ["oc_proxy.reasoning.deepseek_reasoning_content_callback"]
+    assert config["litellm_settings"]["callbacks"] == [
+        "oc_proxy.reasoning.deepseek_reasoning_content_callback",
+        "oc_proxy.reasoning.client_header_passthrough_callback",
+    ]
     assert config["litellm_settings"]["use_chat_completions_url_for_anthropic_messages"] is True
     assert "general_settings" not in config
 

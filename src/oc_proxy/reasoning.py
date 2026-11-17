@@ -1,9 +1,105 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from litellm.integrations.custom_logger import CustomLogger
 from litellm.types.utils import CallTypes
+
+
+# Claude Code identifies itself with these headers (see the CLI bundle's
+# ``X-Claude-Code-Session-Id`` / ``x-app`` constants). LiteLLM only forwards
+# ``x-*`` headers when ``forward_client_headers_to_llm_api`` is enabled and it
+# never forwards ``User-Agent``, so the upstream otherwise sees the OpenAI
+# Python SDK's ``AsyncOpenAI/Python <version>`` user agent instead.
+_CLIENT_HEADER_ALLOWLIST = frozenset(
+    {
+        "user-agent",
+        "x-app",
+        "x-claude-code-session-id",
+        "x-claude-code-agent-id",
+        "x-claude-code-parent-agent-id",
+        "x-claude-code-prompt-id",
+    }
+)
+_SESSION_HEADER_RE = re.compile(r"^x-.+-session-id$", re.IGNORECASE)
+_SESSION_FROM_USER_ID_RE = re.compile(r"_session_([0-9A-Za-z-]{8,})")
+
+
+class ClientHeaderPassthroughCallback(CustomLogger):
+    """Forward Claude Code's client identity and session headers upstream.
+
+    LiteLLM sends OpenAI-compatible requests through the OpenAI Python SDK, which
+    labels every request with ``AsyncOpenAI/Python <version>``. Copying the
+    original headers onto ``data["headers"]`` makes LiteLLM pass them to the
+    provider as ``extra_headers``; those win over the SDK defaults, so the
+    upstream sees Claude Code's own ``User-Agent`` and session id.
+    """
+
+    async def async_pre_call_hook(
+        self,
+        user_api_key_dict: Any,
+        cache: Any,
+        data: Any,
+        call_type: Any,
+        **kwargs: Any,
+    ) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        forwarded: dict[str, str] = {}
+        for name, value in _incoming_headers(data).items():
+            lowered = name.lower()
+            if lowered in _CLIENT_HEADER_ALLOWLIST or _SESSION_HEADER_RE.match(lowered):
+                forwarded[_canonical_header_name(lowered)] = str(value)
+
+        if "X-Claude-Code-Session-Id" not in forwarded:
+            session_id = _session_id_from_metadata(data)
+            if session_id:
+                forwarded["X-Claude-Code-Session-Id"] = session_id
+
+        if not forwarded:
+            return data
+
+        existing = data.get("headers")
+        merged = dict(existing) if isinstance(existing, dict) else {}
+        forwarded_lower = {key.lower() for key in forwarded}
+        for key in [key for key in merged if str(key).lower() in forwarded_lower]:
+            del merged[key]
+        merged.update(forwarded)
+        data["headers"] = merged
+        return data
+
+
+def _canonical_header_name(lowered_name: str) -> str:
+    """Canonicalise a lowercased header name (``user-agent`` -> ``User-Agent``).
+
+    openai-python <3 merges custom headers case-sensitively, so sending a
+    lowercased ``user-agent`` would leave the SDK default in place and httpx
+    would join both values into ``AsyncOpenAI/Python x, claude-cli/...``.
+    """
+    return "-".join(part.capitalize() for part in lowered_name.split("-"))
+
+
+def _incoming_headers(data: dict[str, Any]) -> dict[str, Any]:
+    request = data.get("proxy_server_request")
+    if not isinstance(request, dict):
+        return {}
+    headers = request.get("headers")
+    if not headers:
+        return {}
+    return dict(headers)
+
+
+def _session_id_from_metadata(data: dict[str, Any]) -> str | None:
+    metadata = data.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    user_id = metadata.get("user_id")
+    if not isinstance(user_id, str):
+        return None
+    match = _SESSION_FROM_USER_ID_RE.search(user_id)
+    return match.group(1) if match else None
 
 
 def _patch_litellm_empty_stream_choices() -> None:
@@ -102,4 +198,5 @@ def _thinking_blocks_to_reasoning_content(thinking_blocks: Any) -> str | None:
 
 
 deepseek_reasoning_content_callback = DeepSeekReasoningContentCallback()
+client_header_passthrough_callback = ClientHeaderPassthroughCallback()
 _patch_litellm_empty_stream_choices()

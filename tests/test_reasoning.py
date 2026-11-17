@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+
 from litellm.types.utils import CallTypes
 
-from oc_proxy.reasoning import DeepSeekReasoningContentCallback
+from oc_proxy.reasoning import ClientHeaderPassthroughCallback, DeepSeekReasoningContentCallback
 
 
 def test_deepseek_callback_preserves_reasoning_content() -> None:
@@ -96,3 +98,70 @@ def test_litellm_repetition_patch_ignores_empty_choices() -> None:
     wrapper.raise_on_model_repetition()
 
     assert wrapper._repeated_messages_count == 1
+
+
+def test_client_header_passthrough_forwards_claude_code_headers() -> None:
+    callback = ClientHeaderPassthroughCallback()
+    data = {
+        "model": "deepseek-v4-pro",
+        "proxy_server_request": {
+            "headers": {
+                "user-agent": "claude-cli/2.1.326 (external, cli)",
+                "x-app": "cli",
+                "x-claude-code-session-id": "e96634a3-fa28-4083-b354-55542e2dca01",
+                "x-claude-code-agent-id": "agent_1",
+                "x-api-key": "dummy-key-for-claude-code",
+                "authorization": "Bearer dummy-key-for-claude-code",
+                "content-type": "application/json",
+            }
+        },
+    }
+
+    result = asyncio.run(callback.async_pre_call_hook(None, None, data, "anthropic_messages"))
+
+    assert result["headers"] == {
+        "User-Agent": "claude-cli/2.1.326 (external, cli)",
+        "X-App": "cli",
+        "X-Claude-Code-Session-Id": "e96634a3-fa28-4083-b354-55542e2dca01",
+        "X-Claude-Code-Agent-Id": "agent_1",
+    }
+
+
+def test_client_header_passthrough_falls_back_to_metadata_session_id() -> None:
+    callback = ClientHeaderPassthroughCallback()
+    data = {
+        "model": "deepseek-v4-pro",
+        "metadata": {"user_id": "user_abc_account_def_session_12345678-1234-1234-1234-123456789abc"},
+        "proxy_server_request": {"headers": {"user-agent": "claude-cli/2.1.326 (external, cli)"}},
+    }
+
+    result = asyncio.run(callback.async_pre_call_hook(None, None, data, "anthropic_messages"))
+
+    assert result["headers"]["X-Claude-Code-Session-Id"] == "12345678-1234-1234-1234-123456789abc"
+    assert result["headers"]["User-Agent"] == "claude-cli/2.1.326 (external, cli)"
+
+
+def test_client_header_passthrough_keeps_litellm_forwarded_headers() -> None:
+    callback = ClientHeaderPassthroughCallback()
+    data = {
+        "model": "deepseek-v4-pro",
+        "headers": {"anthropic-beta": "fine-grained-tool-streaming-2025-05-14"},
+        "proxy_server_request": {"headers": {"user-agent": "claude-cli/2.1.326 (external, cli)"}},
+    }
+
+    result = asyncio.run(callback.async_pre_call_hook(None, None, data, "anthropic_messages"))
+
+    assert result["headers"] == {
+        "anthropic-beta": "fine-grained-tool-streaming-2025-05-14",
+        "User-Agent": "claude-cli/2.1.326 (external, cli)",
+    }
+
+
+def test_client_header_passthrough_without_client_headers_is_a_noop() -> None:
+    callback = ClientHeaderPassthroughCallback()
+    data = {"model": "deepseek-v4-pro", "metadata": {"user_id": "user_abc_account_def"}}
+
+    result = asyncio.run(callback.async_pre_call_hook(None, None, data, "anthropic_messages"))
+
+    assert "headers" not in result
+    assert result["metadata"]["user_id"] == "user_abc_account_def"
