@@ -63,7 +63,10 @@ def build_litellm_config(settings: ProxySettings) -> dict[str, Any]:
             }
         ],
         "litellm_settings": {
-            "callbacks": ["oc_proxy.reasoning.deepseek_reasoning_content_callback"],
+            "callbacks": [
+                "oc_proxy.reasoning.deepseek_reasoning_content_callback",
+                "oc_proxy.reasoning.client_header_passthrough_callback",
+            ],
             "drop_params": True,
             "set_verbose": settings.debug,
             "use_chat_completions_url_for_anthropic_messages": True,

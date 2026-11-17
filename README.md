@@ -37,6 +37,17 @@ Add equivalent environment values to your Claude Code user-scope `settings.json`
 - `OC_PROXY_HOST`: optional host override, defaults to `127.0.0.1`.
 - `OC_PROXY_PORT`: optional port override, defaults to `4000`.
 
+## Client Header Passthrough
+
+LiteLLM calls the upstream through the OpenAI Python SDK, which labels every request
+with `User-Agent: AsyncOpenAI/Python <version>`. `oc-cc-proxy` copies Claude Code's
+client identity headers onto the upstream request via `extra_headers`, so OpenCode Go
+sees the original `User-Agent` (`claude-cli/<version> (external, cli)`), `x-app`,
+`X-Claude-Code-Session-Id`, and the agent/prompt headers instead. When the request has
+no `X-Claude-Code-Session-Id` header, the session id is recovered from
+`metadata.user_id` (`..._session_<uuid>`). Credential headers (`Authorization`,
+`x-api-key`) are never forwarded; upstream auth still uses `OPENCODE_GO_API_KEY`.
+
 ## Local Development Setup
 
 1. Install dependencies:
